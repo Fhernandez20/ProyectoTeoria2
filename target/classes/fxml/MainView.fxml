@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+
+<!--
+    MainView.fxml - Ventana principal del Database Manager.
+    Se expande aquí la funcionalidad de objetos de BD, DDL, etc.
+    Por ahora es un placeholder funcional que confirma la conexión.
+-->
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="controller.MainController"
+            styleClass="main-root">
+
+    <!-- TOP BAR -->
+    <top>
+        <HBox styleClass="topbar" spacing="16" alignment="CENTER_LEFT">
+            <padding><Insets top="10" right="16" bottom="10" left="16"/></padding>
+            <Label text="⬡ DATABASE MANAGER" styleClass="topbar-brand"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="lblConexionActiva" styleClass="topbar-conexion"/>
+            <Button text="Desconectar" onAction="#onDesconectar" styleClass="btn-danger-sm"/>
+        </HBox>
+    </top>
+
+    <!-- SIDEBAR IZQUIERDO: árbol de objetos -->
+    <left>
+        <VBox styleClass="sidebar" minWidth="220" prefWidth="220" spacing="8">
+            <padding><Insets top="16" right="0" bottom="16" left="0"/></padding>
+            <Label text="OBJETOS" styleClass="sidebar-title"/>
+            <TreeView fx:id="treeObjetos" VBox.vgrow="ALWAYS" styleClass="tree-objetos"/>
+            <Button text="↻ Refrescar" onAction="#onRefrescar"
+                    styleClass="btn-secondary" maxWidth="Infinity"/>
+        </VBox>
+    </left>
+
+    <!-- CENTRO: área de trabajo (se expandirá en siguientes fases) -->
+    <center>
+        <VBox styleClass="workspace" alignment="CENTER" spacing="16">
+            <Label text="Selecciona un objeto del árbol para comenzar"
+                   styleClass="workspace-hint"/>
+            <Label fx:id="lblEstadoBD" styleClass="workspace-sub"/>
+        </VBox>
+    </center>
+
+    <!-- BOTTOM: barra de estado -->
+    <bottom>
+        <HBox styleClass="statusbar" alignment="CENTER_LEFT" spacing="12">
+            <padding><Insets top="6" right="12" bottom="6" left="12"/></padding>
+            <Label fx:id="lblStatus" styleClass="status-text" text="Listo"/>
+        </HBox>
+    </bottom>
+</BorderPane>

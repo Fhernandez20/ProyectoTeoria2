@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.LoginController"
+      styleClass="root-pane"
+      spacing="0">
+
+    <!-- HEADER -->
+    <VBox styleClass="header" alignment="CENTER" spacing="4">
+        <Label text="⬡" styleClass="logo-icon"/>
+        <Label text="DATABASE MANAGER" styleClass="app-title"/>
+        <Label text="MariaDB Administration Tool" styleClass="app-subtitle"/>
+    </VBox>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <HBox spacing="0" VBox.vgrow="ALWAYS">
+
+        <!-- PANEL IZQUIERDO: conexiones guardadas -->
+        <VBox styleClass="sidebar" spacing="8" minWidth="180" prefWidth="180">
+            <Label text="CONEXIONES" styleClass="sidebar-title"/>
+
+            <ListView fx:id="listConexiones" styleClass="conexiones-list" VBox.vgrow="ALWAYS"/>
+
+            <Button text="+ Nueva" onAction="#onNuevaConexion"
+                    styleClass="btn-secondary" maxWidth="Infinity"/>
+            <Button text="✕ Eliminar" onAction="#onEliminarConexion"
+                    styleClass="btn-danger" maxWidth="Infinity"/>
+        </VBox>
+
+        <!-- PANEL DERECHO: formulario de conexión -->
+        <VBox styleClass="form-panel" spacing="16" HBox.hgrow="ALWAYS">
+            <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
+
+            <Label text="Configurar conexión" styleClass="form-title"/>
+
+            <GridPane hgap="12" vgap="12" styleClass="form-grid">
+                <columnConstraints>
+                    <ColumnConstraints prefWidth="100" halignment="RIGHT"/>
+                    <ColumnConstraints hgrow="ALWAYS"/>
+                </columnConstraints>
+
+                <Label text="Alias" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="form-label"/>
+                <TextField fx:id="txtAlias" promptText="Mi servidor local"
+                           GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="form-field"/>
+
+                <Label text="Host" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="form-label"/>
+                <TextField fx:id="txtHost" promptText="localhost"
+                           GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="form-field"/>
+
+                <Label text="Puerto" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="form-label"/>
+                <TextField fx:id="txtPuerto" promptText="3306"
+                           GridPane.rowIndex="2" GridPane.columnIndex="1" styleClass="form-field"/>
+
+                <Label text="Usuario" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="form-label"/>
+                <TextField fx:id="txtUsuario" promptText="root"
+                           GridPane.rowIndex="3" GridPane.columnIndex="1" styleClass="form-field"/>
+
+                <Label text="Contraseña" GridPane.rowIndex="4" GridPane.columnIndex="0" styleClass="form-label"/>
+                <PasswordField fx:id="txtContrasena"
+                               GridPane.rowIndex="4" GridPane.columnIndex="1" styleClass="form-field"/>
+
+                <Label text="Base de datos" GridPane.rowIndex="5" GridPane.columnIndex="0" styleClass="form-label"/>
+                <TextField fx:id="txtBaseDatos" promptText="presupuesto_personal (opcional)"
+                           GridPane.rowIndex="5" GridPane.columnIndex="1" styleClass="form-field"/>
+            </GridPane>
+
+            <!-- Mensaje de error/estado -->
+            <Label fx:id="lblMensaje" styleClass="lbl-mensaje" wrapText="true"/>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <!-- Botones de acción -->
+            <HBox spacing="10">
+                <Button text="Probar conexión" onAction="#onProbarConexion"
+                        styleClass="btn-secondary" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                <Button text="Guardar" onAction="#onGuardarConexion"
+                        styleClass="btn-secondary" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+            </HBox>
+            <Button text="Conectar →" onAction="#onConectar"
+                    styleClass="btn-primary" maxWidth="Infinity" prefHeight="44"/>
+        </VBox>
+    </HBox>
+</VBox>
