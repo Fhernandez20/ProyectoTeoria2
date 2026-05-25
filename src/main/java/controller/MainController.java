@@ -357,7 +357,14 @@ public class MainController implements Initializable {
                 lblStatus.setText("❌ ERROR: Ingresa el nombre de la tabla");
                 return;
             }
-            List<String> columnas = Arrays.stream(textCols.getText().split("\n"))
+            
+            // Limpiar el texto: reemplazar saltos de línea y espacios extras
+            String textoLimpio = textCols.getText()
+                .replaceAll("\\s+", " ")  // Reemplaza múltiples espacios/enters con un solo espacio
+                .trim();
+            
+            // Dividir por comas y limpiar cada columna
+            List<String> columnas = Arrays.stream(textoLimpio.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
