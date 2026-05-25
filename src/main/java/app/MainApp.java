@@ -13,10 +13,12 @@ public class MainApp extends Application {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/LoginView.fxml"));
         Parent root = loader.load();
 
-        Scene scene = new Scene(root, 520, 600);
+        Scene scene = new Scene(root, 520, 700);
+        // Cargar ambas hojas de estilo
         scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+        scene.getStylesheets().add(getClass().getResource("/css/tabs.css").toExternalForm());
 
-        primaryStage.setTitle("Database Manager Tool");
+        primaryStage.setTitle("Database Manager Tool — MariaDB");
         primaryStage.setScene(scene);
         primaryStage.setResizable(false);
         primaryStage.show();
