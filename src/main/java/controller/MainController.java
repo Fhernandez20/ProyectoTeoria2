@@ -79,7 +79,6 @@ public class MainController implements Initializable {
         raiz.setExpanded(true);
 
         try {
-            cargarBasesDeDatos(conn, raiz);
             cargarTablas(conn, raiz);
             cargarVistas(conn, raiz);
             cargarProcedimientos(conn, raiz);
@@ -124,17 +123,6 @@ public class MainController implements Initializable {
         } else {
             tipoObjeto = "";
         }
-    }
-
-    private void cargarBasesDeDatos(Connection conn, TreeItem<String> raiz) throws SQLException {
-        TreeItem<String> nodo = new TreeItem<>("Bases de datos");
-        try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SHOW DATABASES")) {
-            while (rs.next()) {
-                nodo.getChildren().add(new TreeItem<>(rs.getString(1)));
-            }
-        }
-        raiz.getChildren().add(nodo);
     }
 
     private void cargarTablas(Connection conn, TreeItem<String> raiz) throws SQLException {
