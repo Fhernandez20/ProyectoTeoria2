@@ -8,42 +8,36 @@
             fx:controller="controller.MainController"
             styleClass="main-root">
 
-    <!-- TOP BAR -->
     <top>
         <HBox styleClass="topbar" spacing="16" alignment="CENTER_LEFT">
             <padding><Insets top="10" right="16" bottom="10" left="16"/></padding>
-            <Label text="⬡ DATABASE MANAGER" styleClass="topbar-brand"/>
+            <Label text="DATABASE MANAGER" styleClass="topbar-brand"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Label fx:id="lblConexionActiva" styleClass="topbar-conexion"/>
             <Button text="Desconectar" onAction="#onDesconectar" styleClass="btn-danger-sm"/>
         </HBox>
     </top>
 
-    <!-- SIDEBAR IZQUIERDO: árbol de objetos -->
     <left>
         <VBox styleClass="sidebar" minWidth="220" prefWidth="220" spacing="8">
             <padding><Insets top="16" right="0" bottom="16" left="0"/></padding>
             <Label text="OBJETOS" styleClass="sidebar-title"/>
             <TreeView fx:id="treeObjetos" VBox.vgrow="ALWAYS" styleClass="tree-objetos"/>
-            <Button text="↻ Refrescar" onAction="#onRefrescar"
+            <Button text="Refrescar" onAction="#onRefrescar"
                     styleClass="btn-secondary" maxWidth="Infinity"/>
         </VBox>
     </left>
 
-    <!-- CENTRO: TabPane con DDL, Editor Visual, SQL Executor -->
     <center>
-        <TabPane fx:id="tabPane" styleClass="tab-pane" tabClosingPolicy="UNAVAILABLE">
-            <stylesheets>
-                <String fx:value="/css/tabs.css"/>
-            </stylesheets>
-        </TabPane>
+        <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" 
+                 style="-fx-background-color: #0f1117;"/>
     </center>
 
-    <!-- BOTTOM: barra de estado -->
     <bottom>
         <HBox styleClass="statusbar" alignment="CENTER_LEFT" spacing="12">
             <padding><Insets top="6" right="12" bottom="6" left="12"/></padding>
             <Label fx:id="lblStatus" styleClass="status-text" text="Listo"/>
+            <Label fx:id="lblEstadoBD" styleClass="status-text"/>
         </HBox>
     </bottom>
 </BorderPane>

@@ -6,7 +6,6 @@ import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 import javafx.geometry.Insets;
 import javafx.collections.FXCollections;
@@ -16,7 +15,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.Node;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import model.ConexionGuardada;
 import service.ConexionManager;
@@ -30,11 +28,11 @@ import java.util.stream.Collectors;
 
 public class MainController implements Initializable {
 
-    @FXML private Label lblConexionActiva;
-    @FXML private Label lblEstadoBD;
-    @FXML private Label lblStatus;
-    @FXML private TreeView<String> treeObjetos;
-    @FXML private TabPane tabPane;
+    @FXML public Label lblConexionActiva;
+    @FXML public Label lblEstadoBD;
+    @FXML public Label lblStatus;
+    @FXML public TreeView<String> treeObjetos;
+    @FXML public TabPane tabPane;
 
     private MetadataExtractor metadata;
     private String objetoSeleccionado = "";
@@ -42,25 +40,36 @@ public class MainController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        System.out.println("[INIT] Iniciando MainController...");
+        
         ConexionGuardada datos = ConexionManager.getDatosActivos();
         if (datos != null) {
             lblConexionActiva.setText(datos.getUsuario() + "@" + datos.getHost()
                 + ":" + datos.getPuerto());
-            lblEstadoBD.setText("Conectado a: " + datos.getBaseDatos());
+            lblEstadoBD.setText("BD: " + datos.getBaseDatos());
         }
 
-        metadata = new MetadataExtractor(ConexionManager.getConexion());
+        Connection conn = ConexionManager.getConexion();
+        if (conn == null) {
+            lblStatus.setText("ERROR: No hay conexion activa");
+            return;
+        }
 
-        // Crear tabs
+        metadata = new MetadataExtractor(conn);
+        
+        System.out.println("[INIT] Creando tabs...");
         crearTabDDL();
         crearTabEditorVisual();
         crearTabSQLExecutor();
-
+        
+        System.out.println("[INIT] Cargando arbol de objetos...");
         cargarArbolObjetos();
+        
+        System.out.println("[INIT] MainController iniciado correctamente");
     }
 
     // ================================================================
-    // ARBOL DE OBJETOS
+    // CARGAR ARBOL
     // ================================================================
     private void cargarArbolObjetos() {
         Connection conn = ConexionManager.getConexion();
@@ -69,84 +78,77 @@ public class MainController implements Initializable {
         TreeItem<String> raiz = new TreeItem<>("Servidor");
         raiz.setExpanded(true);
 
-        cargarBasesDeDatos(conn, raiz);
-        cargarTablas(conn, raiz);
-        cargarVistas(conn, raiz);
-        cargarProcedimientos(conn, raiz);
-        cargarFunciones(conn, raiz);
-        cargarTriggers(conn, raiz);
-        cargarUsuarios(conn, raiz);
+        try {
+            cargarBasesDeDatos(conn, raiz);
+            cargarTablas(conn, raiz);
+            cargarVistas(conn, raiz);
+            cargarProcedimientos(conn, raiz);
+            cargarFunciones(conn, raiz);
+            cargarTriggers(conn, raiz);
+            cargarUsuarios(conn, raiz);
+        } catch (Exception e) {
+            System.err.println("Error cargando arbol: " + e.getMessage());
+            e.printStackTrace();
+        }
 
         treeObjetos.setRoot(raiz);
         treeObjetos.getSelectionModel().selectedItemProperty().addListener(
             (obs, old, nueva) -> {
                 if (nueva != null) {
-                    objetoSeleccionado = nueva.getValue();
-                    detectarTipoObjeto();
+                    String texto = nueva.getValue();
+                    if (!texto.contains("(") && !texto.isEmpty()) {
+                        objetoSeleccionado = texto;
+                        detectarTipoObjeto();
+                    }
                 }
             }
         );
 
-        lblStatus.setText("Objetos cargados correctamente.");
+        lblStatus.setText("Objetos cargados");
     }
 
     private void detectarTipoObjeto() {
         if (metadata == null) return;
-
         if (metadata.listarTablas().contains(objetoSeleccionado)) {
             tipoObjeto = "TABLA";
-            lblStatus.setText("Tabla seleccionada: " + objetoSeleccionado);
         } else if (metadata.listarVistas().contains(objetoSeleccionado)) {
             tipoObjeto = "VISTA";
-            lblStatus.setText("Vista seleccionada: " + objetoSeleccionado);
         } else if (metadata.listarProcedimientos().contains(objetoSeleccionado)) {
             tipoObjeto = "PROCEDIMIENTO";
-            lblStatus.setText("Procedimiento seleccionado: " + objetoSeleccionado);
         } else if (metadata.listarFunciones().contains(objetoSeleccionado)) {
             tipoObjeto = "FUNCION";
-            lblStatus.setText("Funcion seleccionada: " + objetoSeleccionado);
-        } else {
-            tipoObjeto = "";
         }
     }
 
-    private void cargarBasesDeDatos(Connection conn, TreeItem<String> raiz) {
+    private void cargarBasesDeDatos(Connection conn, TreeItem<String> raiz) throws SQLException {
         TreeItem<String> nodo = new TreeItem<>("Bases de datos");
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SHOW DATABASES")) {
             while (rs.next()) {
                 nodo.getChildren().add(new TreeItem<>(rs.getString(1)));
             }
-        } catch (SQLException e) {
-            nodo.getChildren().add(new TreeItem<>("Error: " + e.getMessage()));
         }
         raiz.getChildren().add(nodo);
     }
 
-    private void cargarTablas(Connection conn, TreeItem<String> raiz) {
+    private void cargarTablas(Connection conn, TreeItem<String> raiz) throws SQLException {
         TreeItem<String> nodo = new TreeItem<>("Tablas");
         try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(
-                 "SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'")) {
+             ResultSet rs = stmt.executeQuery("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'")) {
             while (rs.next()) {
                 nodo.getChildren().add(new TreeItem<>(rs.getString(1)));
             }
-        } catch (SQLException e) {
-            nodo.getChildren().add(new TreeItem<>("Error: " + e.getMessage()));
         }
         raiz.getChildren().add(nodo);
     }
 
-    private void cargarVistas(Connection conn, TreeItem<String> raiz) {
+    private void cargarVistas(Connection conn, TreeItem<String> raiz) throws SQLException {
         TreeItem<String> nodo = new TreeItem<>("Vistas");
         try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(
-                 "SHOW FULL TABLES WHERE Table_type = 'VIEW'")) {
+             ResultSet rs = stmt.executeQuery("SHOW FULL TABLES WHERE Table_type = 'VIEW'")) {
             while (rs.next()) {
                 nodo.getChildren().add(new TreeItem<>(rs.getString(1)));
             }
-        } catch (SQLException e) {
-            nodo.getChildren().add(new TreeItem<>("(ninguna)"));
         }
         raiz.getChildren().add(nodo);
     }
@@ -155,19 +157,16 @@ public class MainController implements Initializable {
         TreeItem<String> nodo = new TreeItem<>("Procedimientos");
         try {
             String bd = conn.getCatalog();
-            PreparedStatement ps = conn.prepareStatement(
-                "SHOW PROCEDURE STATUS WHERE Db = ?");
+            PreparedStatement ps = conn.prepareStatement("SHOW PROCEDURE STATUS WHERE Db = ?");
             ps.setString(1, bd);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 nodo.getChildren().add(new TreeItem<>(rs.getString("Name")));
             }
-            if (nodo.getChildren().isEmpty()) {
-                nodo.getChildren().add(new TreeItem<>("(ninguno)"));
-            }
-            rs.close(); ps.close();
+            rs.close();
+            ps.close();
         } catch (SQLException e) {
-            nodo.getChildren().add(new TreeItem<>("Error: " + e.getMessage()));
+            System.err.println("Error cargando procedimientos: " + e.getMessage());
         }
         raiz.getChildren().add(nodo);
     }
@@ -176,60 +175,47 @@ public class MainController implements Initializable {
         TreeItem<String> nodo = new TreeItem<>("Funciones");
         try {
             String bd = conn.getCatalog();
-            PreparedStatement ps = conn.prepareStatement(
-                "SHOW FUNCTION STATUS WHERE Db = ?");
+            PreparedStatement ps = conn.prepareStatement("SHOW FUNCTION STATUS WHERE Db = ?");
             ps.setString(1, bd);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 nodo.getChildren().add(new TreeItem<>(rs.getString("Name")));
             }
-            if (nodo.getChildren().isEmpty()) {
-                nodo.getChildren().add(new TreeItem<>("(ninguna)"));
-            }
-            rs.close(); ps.close();
+            rs.close();
+            ps.close();
         } catch (SQLException e) {
-            nodo.getChildren().add(new TreeItem<>("Error: " + e.getMessage()));
+            System.err.println("Error cargando funciones: " + e.getMessage());
         }
         raiz.getChildren().add(nodo);
     }
 
-    private void cargarTriggers(Connection conn, TreeItem<String> raiz) {
+    private void cargarTriggers(Connection conn, TreeItem<String> raiz) throws SQLException {
         TreeItem<String> nodo = new TreeItem<>("Triggers");
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SHOW TRIGGERS")) {
             while (rs.next()) {
                 String nombre = rs.getString("Trigger");
-                String tabla  = rs.getString("Table");
+                String tabla = rs.getString("Table");
                 String evento = rs.getString("Event");
-                nodo.getChildren().add(
-                    new TreeItem<>(nombre + " [" + evento + " ON " + tabla + "]"));
+                nodo.getChildren().add(new TreeItem<>(nombre + " [" + evento + "]"));
             }
-            if (nodo.getChildren().isEmpty()) {
-                nodo.getChildren().add(new TreeItem<>("(ninguno)"));
-            }
-        } catch (SQLException e) {
-            nodo.getChildren().add(new TreeItem<>("Error: " + e.getMessage()));
         }
         raiz.getChildren().add(nodo);
     }
 
-    private void cargarUsuarios(Connection conn, TreeItem<String> raiz) {
+    private void cargarUsuarios(Connection conn, TreeItem<String> raiz) throws SQLException {
         TreeItem<String> nodo = new TreeItem<>("Usuarios");
         try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(
-                 "SELECT User, Host FROM mysql.user ORDER BY User")) {
+             ResultSet rs = stmt.executeQuery("SELECT User, Host FROM mysql.user ORDER BY User")) {
             while (rs.next()) {
-                nodo.getChildren().add(
-                    new TreeItem<>(rs.getString("User") + "@" + rs.getString("Host")));
+                nodo.getChildren().add(new TreeItem<>(rs.getString("User") + "@" + rs.getString("Host")));
             }
-        } catch (SQLException e) {
-            nodo.getChildren().add(new TreeItem<>("(sin permisos)"));
         }
         raiz.getChildren().add(nodo);
     }
 
     // ================================================================
-    // TAB 1: DDL VIEWER
+    // TAB 1: DDL
     // ================================================================
     private void crearTabDDL() {
         Tab tabDDL = new Tab();
@@ -238,50 +224,32 @@ public class MainController implements Initializable {
 
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(16));
+        vbox.setStyle("-fx-background-color: #0f1117;");
 
-        Label lblTitulo = new Label("SQL de creacion del objeto seleccionado:");
-        lblTitulo.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
+        Label lblTitulo = new Label("Ver SQL de creacion:");
+        lblTitulo.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;");
 
         TextArea textDDL = new TextArea();
         textDDL.setWrapText(false);
-        textDDL.setStyle("-fx-font-family: 'Courier New'; -fx-font-size: 11px;");
+        textDDL.setStyle("-fx-font-family: 'Courier New'; -fx-font-size: 10px; -fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0;");
         textDDL.setEditable(false);
         VBox.setVgrow(textDDL, Priority.ALWAYS);
 
-        HBox btnBox = new HBox(10);
         Button btnCargar = new Button("Cargar DDL");
-        btnCargar.setStyle("-fx-padding: 8px 16px; -fx-font-size: 12px;");
+        btnCargar.setStyle("-fx-padding: 8px 16px;");
         btnCargar.setOnAction(e -> {
             if (tipoObjeto.isEmpty()) {
-                textDDL.setText("Selecciona un objeto del arbol.");
+                textDDL.setText("Selecciona un objeto del arbol");
                 return;
             }
             String ddl = obtenerDDL();
             textDDL.setText(ddl);
-            lblStatus.setText("DDL cargado para: " + objetoSeleccionado);
+            lblStatus.setText("DDL cargado: " + objetoSeleccionado);
         });
 
-        Button btnCopiar = new Button("Copiar");
-        btnCopiar.setStyle("-fx-padding: 8px 16px; -fx-font-size: 12px;");
-        btnCopiar.setOnAction(e -> {
-            String contenido = textDDL.getText();
-            if (!contenido.isEmpty()) {
-                javafx.scene.input.Clipboard clip = javafx.scene.input.Clipboard.getSystemClipboard();
-                javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
-                content.putString(contenido);
-                clip.setContent(content);
-                lblStatus.setText("DDL copiado al portapapeles");
-            }
-        });
-
-        btnBox.getChildren().addAll(btnCargar, btnCopiar);
-
-        vbox.getChildren().addAll(lblTitulo, textDDL, btnBox);
+        vbox.getChildren().addAll(lblTitulo, textDDL, btnCargar);
         tabDDL.setContent(vbox);
-
-        if (tabPane != null) {
-            tabPane.getTabs().add(tabDDL);
-        }
+        tabPane.getTabs().add(tabDDL);
     }
 
     private String obtenerDDL() {
@@ -295,7 +263,7 @@ public class MainController implements Initializable {
             case "FUNCION":
                 return metadata.getDDLFuncion(objetoSeleccionado);
             default:
-                return "";
+                return "Selecciona una tabla, vista, procedimiento o funcion";
         }
     }
 
@@ -309,32 +277,35 @@ public class MainController implements Initializable {
 
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(16));
+        vbox.setStyle("-fx-background-color: #0f1117;");
 
         Label lblTitulo = new Label("Crear nueva tabla:");
-        lblTitulo.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
+        lblTitulo.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;");
 
         HBox hboxNombre = new HBox(10);
-        Label lblNombre = new Label("Nombre tabla:");
+        Label lblNombre = new Label("Nombre: ");
+        lblNombre.setStyle("-fx-text-fill: #e2e8f0; -fx-min-width: 100;");
         TextField txtNombre = new TextField();
         txtNombre.setPromptText("usuarios");
+        txtNombre.setStyle("-fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0;");
         hboxNombre.getChildren().addAll(lblNombre, txtNombre);
 
-        Label lblColsTitle = new Label("Columnas (nombre tipo [NULL|NOT NULL]):");
-        lblColsTitle.setStyle("-fx-font-size: 11px;");
+        Label lblColsTitle = new Label("Columnas:");
+        lblColsTitle.setStyle("-fx-font-size: 11px; -fx-text-fill: #e2e8f0;");
 
         TextArea textColsInput = new TextArea();
         textColsInput.setPrefRowCount(8);
         textColsInput.setWrapText(true);
-        textColsInput.setText("id INT AUTO_INCREMENT PRIMARY KEY,\nnombre VARCHAR(100) NOT NULL,\nemail VARCHAR(100) UNIQUE,\nfecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+        textColsInput.setText("id INT AUTO_INCREMENT PRIMARY KEY,\nnombre VARCHAR(100) NOT NULL,\nemail VARCHAR(100) UNIQUE");
+        textColsInput.setStyle("-fx-font-family: 'Courier New'; -fx-font-size: 10px; -fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0;");
         VBox.setVgrow(textColsInput, Priority.ALWAYS);
 
-        HBox btnBox = new HBox(10);
         Button btnCrear = new Button("Crear Tabla");
         btnCrear.setStyle("-fx-padding: 8px 16px;");
         btnCrear.setOnAction(e -> {
             String nombre = txtNombre.getText().trim();
             if (nombre.isEmpty()) {
-                lblStatus.setText("Ingresa un nombre para la tabla");
+                lblStatus.setText("ERROR: Ingresa nombre de tabla");
                 return;
             }
             List<String> columnas = Arrays.stream(textColsInput.getText().split("\n"))
@@ -352,17 +323,13 @@ public class MainController implements Initializable {
             }
         });
 
-        btnBox.getChildren().add(btnCrear);
-        vbox.getChildren().addAll(lblTitulo, hboxNombre, lblColsTitle, textColsInput, btnBox);
+        vbox.getChildren().addAll(lblTitulo, hboxNombre, lblColsTitle, textColsInput, btnCrear);
         tabEditor.setContent(vbox);
-
-        if (tabPane != null) {
-            tabPane.getTabs().add(tabEditor);
-        }
+        tabPane.getTabs().add(tabEditor);
     }
 
     // ================================================================
-    // TAB 3: SQL EXECUTOR
+    // TAB 3: EJECUTOR SQL
     // ================================================================
     private void crearTabSQLExecutor() {
         Tab tabSQL = new Tab();
@@ -371,57 +338,53 @@ public class MainController implements Initializable {
 
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(16));
+        vbox.setStyle("-fx-background-color: #0f1117;");
 
-        Label lblTitulo = new Label("Ejecuta SELECT o comandos DML/DDL:");
-        lblTitulo.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
+        Label lblTitulo = new Label("Ejecuta SELECT, INSERT, UPDATE, DELETE:");
+        lblTitulo.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;");
 
         TextArea textSQL = new TextArea();
         textSQL.setPrefRowCount(6);
         textSQL.setWrapText(true);
-        textSQL.setStyle("-fx-font-family: 'Courier New'; -fx-font-size: 11px;");
+        textSQL.setStyle("-fx-font-family: 'Courier New'; -fx-font-size: 10px; -fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0;");
         textSQL.setText("SELECT * FROM ");
         VBox.setVgrow(textSQL, Priority.ALWAYS);
 
-        HBox btnBox = new HBox(10);
         Button btnEjecutar = new Button("Ejecutar");
         btnEjecutar.setStyle("-fx-padding: 8px 16px;");
         btnEjecutar.setOnAction(e -> {
             String sql = textSQL.getText().trim();
             if (sql.isEmpty()) {
-                lblStatus.setText("Ingresa una sentencia SQL");
+                lblStatus.setText("ERROR: Ingresa SQL");
                 return;
             }
             ejecutarSQL(sql, vbox);
         });
-        btnBox.getChildren().add(btnEjecutar);
 
-        vbox.getChildren().addAll(lblTitulo, textSQL, btnBox);
+        vbox.getChildren().addAll(lblTitulo, textSQL, btnEjecutar);
         tabSQL.setContent(vbox);
-
-        if (tabPane != null) {
-            tabPane.getTabs().add(tabSQL);
-        }
+        tabPane.getTabs().add(tabSQL);
     }
 
     private void ejecutarSQL(String sql, VBox contenedor) {
         new Thread(() -> {
             try {
-                if (sql.trim().toLowerCase().startsWith("select")) {
+                if (sql.toLowerCase().startsWith("select")) {
                     List<Map<String, String>> resultados = metadata.ejecutarSelectRetornarMapa(sql);
                     javafx.application.Platform.runLater(() -> {
                         mostrarResultados(resultados, contenedor);
-                        lblStatus.setText("SELECT ejecutado (" + resultados.size() + " filas)");
+                        lblStatus.setText("SELECT: " + resultados.size() + " filas");
                     });
                 } else {
                     int filas = metadata.ejecutarDML(sql);
                     javafx.application.Platform.runLater(() -> {
-                        lblStatus.setText("Comando ejecutado (" + filas + " filas afectadas)");
+                        lblStatus.setText("OK: " + filas + " filas afectadas");
                         cargarArbolObjetos();
                     });
                 }
             } catch (SQLException ex) {
                 javafx.application.Platform.runLater(() ->
-                    lblStatus.setText("Error: " + ex.getMessage())
+                    lblStatus.setText("ERROR: " + ex.getMessage())
                 );
             }
         }).start();
@@ -433,13 +396,11 @@ public class MainController implements Initializable {
             return;
         }
 
-        // Limpiar tabla anterior si existe
         ObservableList<Node> children = contenedor.getChildren();
-        if (children.size() > 4) {
-            children.remove(4, children.size());
+        if (children.size() > 3) {
+            children.remove(3, children.size());
         }
 
-        // Crear TableView dinamicamente
         TableView<Map<String, String>> tabla = new TableView<>();
         Set<String> columnas = resultados.get(0).keySet();
 
@@ -450,13 +411,14 @@ public class MainController implements Initializable {
                 String valor = fila.getOrDefault(colNombre, "");
                 return new SimpleStringProperty(valor);
             });
-            col.setPrefWidth(120);
+            col.setPrefWidth(100);
             tabla.getColumns().add(col);
         }
 
         ObservableList<Map<String, String>> datos = FXCollections.observableArrayList(resultados);
         tabla.setItems(datos);
-        tabla.setPrefHeight(250);
+        tabla.setPrefHeight(200);
+        tabla.setStyle("-fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0;");
 
         contenedor.getChildren().add(tabla);
     }
@@ -465,24 +427,22 @@ public class MainController implements Initializable {
     // BOTONES PRINCIPALES
     // ================================================================
     @FXML
-    private void onRefrescar() {
+    public void onRefrescar() {
         lblStatus.setText("Recargando...");
         cargarArbolObjetos();
     }
 
     @FXML
-    private void onDesconectar() {
+    public void onDesconectar() {
         ConexionManager.cerrar();
         try {
-            FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/fxml/LoginView.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/LoginView.fxml"));
             Parent root = loader.load();
 
             Stage stage = new Stage();
             stage.setTitle("Database Manager Tool");
             stage.setScene(new Scene(root, 520, 600));
-            stage.getScene().getStylesheets().add(
-                getClass().getResource("/css/style.css").toExternalForm());
+            stage.getScene().getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
             stage.show();
 
             Stage mainStage = (Stage) lblStatus.getScene().getWindow();

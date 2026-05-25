@@ -33,12 +33,17 @@ public class LoginController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        System.out.println("[LOGIN] Inicializando LoginController...");
+        
         conexiones = FXCollections.observableArrayList(ConexionStorage.cargar());
         listConexiones.setItems(conexiones);
 
         listConexiones.getSelectionModel().selectedItemProperty().addListener(
             (obs, old, nueva) -> {
-                if (nueva != null) cargarEnFormulario(nueva);
+                if (nueva != null) {
+                    System.out.println("[LOGIN] Conexion seleccionada: " + nueva.getAlias());
+                    cargarEnFormulario(nueva);
+                }
             }
         );
 
@@ -48,6 +53,8 @@ public class LoginController implements Initializable {
         if (!conexiones.isEmpty()) {
             listConexiones.getSelectionModel().selectFirst();
         }
+        
+        System.out.println("[LOGIN] LoginController inicializado");
     }
 
     private void cargarEnFormulario(ConexionGuardada c) {
@@ -75,7 +82,7 @@ public class LoginController implements Initializable {
         try {
             puerto = Integer.parseInt(puertoStr);
         } catch (NumberFormatException e) {
-            mostrarError("El puerto debe ser un número. Se usará 3306.");
+            mostrarError("Puerto invalido. Se usara 3306.");
         }
 
         return new ConexionGuardada(alias, host, puerto, usuario, contrasena, baseDatos);
@@ -83,6 +90,7 @@ public class LoginController implements Initializable {
 
     @FXML
     private void onNuevaConexion() {
+        System.out.println("[LOGIN] Nueva conexion");
         txtAlias.clear();
         txtHost.setText("localhost");
         txtPuerto.setText("3306");
@@ -96,6 +104,7 @@ public class LoginController implements Initializable {
 
     @FXML
     private void onGuardarConexion() {
+        System.out.println("[LOGIN] Guardar conexion");
         ConexionGuardada nueva = leerFormulario();
 
         if (nueva.getUsuario().isBlank()) {
@@ -114,21 +123,22 @@ public class LoginController implements Initializable {
 
         ConexionStorage.guardar(conexiones.stream().toList());
         listConexiones.setItems(FXCollections.observableArrayList(conexiones));
-        mostrarExito("Conexión guardada: " + nueva.getAlias());
+        mostrarExito("Conexion guardada: " + nueva.getAlias());
     }
 
     @FXML
     private void onEliminarConexion() {
+        System.out.println("[LOGIN] Eliminar conexion");
         ConexionGuardada seleccionada = listConexiones.getSelectionModel().getSelectedItem();
         if (seleccionada == null) {
-            mostrarError("Selecciona una conexión para eliminar.");
+            mostrarError("Selecciona una conexion para eliminar.");
             return;
         }
 
         Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION,
-            "¿Eliminar la conexión \"" + seleccionada.getAlias() + "\"?",
+            "Eliminar la conexion \"" + seleccionada.getAlias() + "\"?",
             ButtonType.YES, ButtonType.NO);
-        confirmacion.setTitle("Eliminar conexión");
+        confirmacion.setTitle("Eliminar conexion");
         confirmacion.setHeaderText(null);
 
         confirmacion.showAndWait().ifPresent(btn -> {
@@ -142,16 +152,17 @@ public class LoginController implements Initializable {
 
     @FXML
     private void onProbarConexion() {
+        System.out.println("[LOGIN] Probar conexion");
         ConexionGuardada datos = leerFormulario();
-        mostrarInfo("Probando conexión...");
+        mostrarInfo("Probando conexion...");
 
         new Thread(() -> {
             String error = ConexionManager.probarConexion(datos);
             javafx.application.Platform.runLater(() -> {
                 if (error == null) {
-                    mostrarExito("✓ Conexión exitosa con " + datos.getHost());
+                    mostrarExito("Conexion exitosa con " + datos.getHost());
                 } else {
-                    mostrarError("✗ Error: " + error);
+                    mostrarError("Error: " + error);
                 }
             });
         }).start();
@@ -159,6 +170,7 @@ public class LoginController implements Initializable {
 
     @FXML
     private void onConectar() {
+        System.out.println("[LOGIN] Conectar - Abriendo ventana principal");
         ConexionGuardada datos = leerFormulario();
 
         if (datos.getUsuario().isBlank()) {
@@ -169,12 +181,16 @@ public class LoginController implements Initializable {
         mostrarInfo("Conectando...");
 
         new Thread(() -> {
+            System.out.println("[LOGIN] Thread: Intentando conectar con: " + datos.getAlias());
             boolean ok = ConexionManager.conectar(datos);
+            
             javafx.application.Platform.runLater(() -> {
                 if (ok) {
+                    System.out.println("[LOGIN] Conexion exitosa, abriendo ventana principal");
                     abrirVentanaPrincipal();
                 } else {
-                    mostrarError("No se pudo conectar. Verifica los datos e inténtalo de nuevo.");
+                    System.out.println("[LOGIN] Fallo la conexion");
+                    mostrarError("No se pudo conectar. Verifica los datos.");
                 }
             });
         }).start();
@@ -182,25 +198,35 @@ public class LoginController implements Initializable {
 
     private void abrirVentanaPrincipal() {
         try {
+            System.out.println("[LOGIN] Cargando MainView.fxml...");
             FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/fxml/MainView.fxml"));
             Parent root = loader.load();
+            System.out.println("[LOGIN] MainView.fxml cargado correctamente");
 
             Stage stage = new Stage();
-            stage.setTitle("Database Manager — " + ConexionManager.getDatosActivos().getAlias());
-            stage.setScene(new Scene(root, 1100, 700));
+            stage.setTitle("Database Manager - " + ConexionManager.getDatosActivos().getAlias());
+            stage.setScene(new Scene(root, 1200, 800));
             stage.getScene().getStylesheets().add(
                 getClass().getResource("/css/style.css").toExternalForm());
             stage.show();
+            System.out.println("[LOGIN] Ventana principal abierta");
 
+            // Cerrar ventana de login
             Stage loginStage = (Stage) txtHost.getScene().getWindow();
             loginStage.close();
+            System.out.println("[LOGIN] Ventana de login cerrada");
 
         } catch (IOException e) {
-            mostrarError("Error al abrir la ventana principal: " + e.getMessage());
+            System.err.println("[LOGIN] ERROR al abrir ventana principal: " + e.getMessage());
+            e.printStackTrace();
+            mostrarError("Error: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("[LOGIN] ERROR general: " + e.getMessage());
+            e.printStackTrace();
+            mostrarError("Error general: " + e.getMessage());
         }
     }
-
 
     private void mostrarError(String msg) {
         lblMensaje.setText(msg);

@@ -8,7 +8,8 @@
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="controller.LoginController"
       styleClass="root-pane"
-      spacing="0">
+      spacing="0"
+      prefHeight="750">
 
     <!-- HEADER -->
     <VBox styleClass="header" alignment="CENTER" spacing="4">
@@ -21,68 +22,73 @@
     <HBox spacing="0" VBox.vgrow="ALWAYS">
 
         <!-- PANEL IZQUIERDO: conexiones guardadas -->
-        <VBox styleClass="sidebar" spacing="8" minWidth="180" prefWidth="180">
+        <VBox styleClass="sidebar" spacing="8" minWidth="200" prefWidth="200">
+            <padding><Insets top="16" right="8" bottom="16" left="8"/></padding>
             <Label text="CONEXIONES" styleClass="sidebar-title"/>
 
             <ListView fx:id="listConexiones" styleClass="conexiones-list" VBox.vgrow="ALWAYS"/>
 
-            <Button text="+ Nueva" onAction="#onNuevaConexion"
+            <Button text="Nueva" onAction="#onNuevaConexion"
                     styleClass="btn-secondary" maxWidth="Infinity"/>
-            <Button text="✕ Eliminar" onAction="#onEliminarConexion"
+            <Button text="Eliminar" onAction="#onEliminarConexion"
                     styleClass="btn-danger" maxWidth="Infinity"/>
         </VBox>
 
         <!-- PANEL DERECHO: formulario de conexión -->
-        <VBox styleClass="form-panel" spacing="16" HBox.hgrow="ALWAYS">
-            <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
+        <ScrollPane fitToWidth="true" style="-fx-background-color: #0f1117; -fx-border-color: transparent;">
+            <VBox styleClass="form-panel" spacing="12" HBox.hgrow="ALWAYS">
+                <padding><Insets top="16" right="20" bottom="16" left="20"/></padding>
 
-            <Label text="Configurar conexión" styleClass="form-title"/>
+                <Label text="Configurar conexion" styleClass="form-title"/>
 
-            <GridPane hgap="12" vgap="12" styleClass="form-grid">
-                <columnConstraints>
-                    <ColumnConstraints prefWidth="100" halignment="RIGHT"/>
-                    <ColumnConstraints hgrow="ALWAYS"/>
-                </columnConstraints>
+                <GridPane hgap="10" vgap="10" styleClass="form-grid">
+                    <columnConstraints>
+                        <ColumnConstraints prefWidth="100" halignment="RIGHT"/>
+                        <ColumnConstraints hgrow="ALWAYS"/>
+                    </columnConstraints>
 
-                <Label text="Alias" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="form-label"/>
-                <TextField fx:id="txtAlias" promptText="Mi servidor local"
-                           GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="form-field"/>
+                    <Label text="Alias" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="form-label"/>
+                    <TextField fx:id="txtAlias" promptText="Mi servidor"
+                               GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="form-field"/>
 
-                <Label text="Host" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="form-label"/>
-                <TextField fx:id="txtHost" promptText="localhost"
-                           GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="form-field"/>
+                    <Label text="Host" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="form-label"/>
+                    <TextField fx:id="txtHost" promptText="localhost"
+                               GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="form-field"/>
 
-                <Label text="Puerto" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="form-label"/>
-                <TextField fx:id="txtPuerto" promptText="3306"
-                           GridPane.rowIndex="2" GridPane.columnIndex="1" styleClass="form-field"/>
+                    <Label text="Puerto" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="form-label"/>
+                    <TextField fx:id="txtPuerto" promptText="3306"
+                               GridPane.rowIndex="2" GridPane.columnIndex="1" styleClass="form-field"/>
 
-                <Label text="Usuario" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="form-label"/>
-                <TextField fx:id="txtUsuario" promptText="root"
-                           GridPane.rowIndex="3" GridPane.columnIndex="1" styleClass="form-field"/>
+                    <Label text="Usuario" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="form-label"/>
+                    <TextField fx:id="txtUsuario" promptText="root"
+                               GridPane.rowIndex="3" GridPane.columnIndex="1" styleClass="form-field"/>
 
-                <Label text="Contraseña" GridPane.rowIndex="4" GridPane.columnIndex="0" styleClass="form-label"/>
-                <PasswordField fx:id="txtContrasena"
-                               GridPane.rowIndex="4" GridPane.columnIndex="1" styleClass="form-field"/>
+                    <Label text="Contrasena" GridPane.rowIndex="4" GridPane.columnIndex="0" styleClass="form-label"/>
+                    <PasswordField fx:id="txtContrasena"
+                                   GridPane.rowIndex="4" GridPane.columnIndex="1" styleClass="form-field"/>
 
-                <Label text="Base de datos" GridPane.rowIndex="5" GridPane.columnIndex="0" styleClass="form-label"/>
-                <TextField fx:id="txtBaseDatos" promptText="presupuesto_personal (opcional)"
-                           GridPane.rowIndex="5" GridPane.columnIndex="1" styleClass="form-field"/>
-            </GridPane>
+                    <Label text="BD" GridPane.rowIndex="5" GridPane.columnIndex="0" styleClass="form-label"/>
+                    <TextField fx:id="txtBaseDatos" promptText="opcional"
+                               GridPane.rowIndex="5" GridPane.columnIndex="1" styleClass="form-field"/>
+                </GridPane>
 
-            <!-- Mensaje de error/estado -->
-            <Label fx:id="lblMensaje" styleClass="lbl-mensaje" wrapText="true"/>
+                <!-- Mensaje de estado -->
+                <Label fx:id="lblMensaje" styleClass="lbl-mensaje" wrapText="true" minHeight="32"/>
 
-            <Region VBox.vgrow="ALWAYS"/>
+                <!-- Botones de accion -->
+                <HBox spacing="10">
+                    <Button text="Probar" onAction="#onProbarConexion"
+                            styleClass="btn-secondary" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Button text="Guardar" onAction="#onGuardarConexion"
+                            styleClass="btn-secondary" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                </HBox>
 
-            <!-- Botones de acción -->
-            <HBox spacing="10">
-                <Button text="Probar conexión" onAction="#onProbarConexion"
-                        styleClass="btn-secondary" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                <Button text="Guardar" onAction="#onGuardarConexion"
-                        styleClass="btn-secondary" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-            </HBox>
-            <Button text="Conectar →" onAction="#onConectar"
-                    styleClass="btn-primary" maxWidth="Infinity" prefHeight="44"/>
-        </VBox>
+                <!-- Boton conectar GRANDE -->
+                <Button text="CONECTAR" onAction="#onConectar"
+                        styleClass="btn-primary" maxWidth="Infinity" prefHeight="50"
+                        style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-letter-spacing: 2;"/>
+
+            </VBox>
+        </ScrollPane>
     </HBox>
 </VBox>
