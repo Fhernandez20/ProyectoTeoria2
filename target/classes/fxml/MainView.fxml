@@ -4,11 +4,6 @@
 <?import javafx.scene.control.*?>
 <?import javafx.geometry.*?>
 
-<!--
-    MainView.fxml - Ventana principal del Database Manager.
-    Se expande aquí la funcionalidad de objetos de BD, DDL, etc.
-    Por ahora es un placeholder funcional que confirma la conexión.
--->
 <BorderPane xmlns:fx="http://javafx.com/fxml"
             fx:controller="controller.MainController"
             styleClass="main-root">
@@ -35,13 +30,13 @@
         </VBox>
     </left>
 
-    <!-- CENTRO: área de trabajo (se expandirá en siguientes fases) -->
+    <!-- CENTRO: TabPane con DDL, Editor Visual, SQL Executor -->
     <center>
-        <VBox styleClass="workspace" alignment="CENTER" spacing="16">
-            <Label text="Selecciona un objeto del árbol para comenzar"
-                   styleClass="workspace-hint"/>
-            <Label fx:id="lblEstadoBD" styleClass="workspace-sub"/>
-        </VBox>
+        <TabPane fx:id="tabPane" styleClass="tab-pane" tabClosingPolicy="UNAVAILABLE">
+            <stylesheets>
+                <String fx:value="/css/tabs.css"/>
+            </stylesheets>
+        </TabPane>
     </center>
 
     <!-- BOTTOM: barra de estado -->
