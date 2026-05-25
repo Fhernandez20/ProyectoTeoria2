@@ -109,6 +109,7 @@ public class MainController implements Initializable {
 
     private void detectarTipoObjeto() {
         if (metadata == null) return;
+        
         if (metadata.listarTablas().contains(objetoSeleccionado)) {
             tipoObjeto = "TABLA";
         } else if (metadata.listarVistas().contains(objetoSeleccionado)) {
@@ -117,6 +118,11 @@ public class MainController implements Initializable {
             tipoObjeto = "PROCEDIMIENTO";
         } else if (metadata.listarFunciones().contains(objetoSeleccionado)) {
             tipoObjeto = "FUNCION";
+        } else if (metadata.listarTriggers().stream()
+                   .anyMatch(t -> t.get("nombre").equals(objetoSeleccionado))) {
+            tipoObjeto = "TRIGGER";
+        } else {
+            tipoObjeto = "";
         }
     }
 
@@ -197,7 +203,7 @@ public class MainController implements Initializable {
                 String nombre = rs.getString("Trigger");
                 String tabla = rs.getString("Table");
                 String evento = rs.getString("Event");
-                nodo.getChildren().add(new TreeItem<>(nombre + " [" + evento + "]"));
+                nodo.getChildren().add(new TreeItem<>(nombre));
             }
         }
         raiz.getChildren().add(nodo);
@@ -231,8 +237,8 @@ public class MainController implements Initializable {
 
         TextArea textDDL = new TextArea();
         textDDL.setWrapText(false);
-        textDDL.setStyle("-fx-font-family: 'Courier New'; -fx-font-size: 10px; -fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0;");
         textDDL.setEditable(false);
+        aplicarEstiloDarkTextArea(textDDL);
         VBox.setVgrow(textDDL, Priority.ALWAYS);
 
         Button btnCargar = new Button("Cargar DDL");
@@ -262,8 +268,10 @@ public class MainController implements Initializable {
                 return metadata.getDDLProcedimiento(objetoSeleccionado);
             case "FUNCION":
                 return metadata.getDDLFuncion(objetoSeleccionado);
+            case "TRIGGER":
+                return metadata.getDDLTrigger(objetoSeleccionado);
             default:
-                return "Selecciona una tabla, vista, procedimiento o funcion";
+                return "Selecciona una tabla, vista, procedimiento, función o trigger";
         }
     }
 
@@ -279,31 +287,31 @@ public class MainController implements Initializable {
         vbox.setPadding(new Insets(16));
         vbox.setStyle("-fx-background-color: #0f1117;");
 
-        Label lblTitulo = new Label("Crear nueva tabla:");
-        lblTitulo.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;");
+        // ========== SECCIÓN DE TABLAS ==========
+        Label lblTituloTabla = new Label("Crear nueva tabla:");
+        lblTituloTabla.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;");
 
-        HBox hboxNombre = new HBox(10);
-        Label lblNombre = new Label("Nombre: ");
-        lblNombre.setStyle("-fx-text-fill: #e2e8f0; -fx-min-width: 100;");
-        TextField txtNombre = new TextField();
-        txtNombre.setPromptText("usuarios");
-        txtNombre.setStyle("-fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0;");
-        hboxNombre.getChildren().addAll(lblNombre, txtNombre);
+        HBox hboxNombreTabla = new HBox(10);
+        Label lblNombreTabla = new Label("Nombre: ");
+        lblNombreTabla.setStyle("-fx-text-fill: #e2e8f0; -fx-min-width: 100;");
+        TextField txtNombreTabla = new TextField();
+        txtNombreTabla.setPromptText("usuarios");
+        txtNombreTabla.setStyle("-fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0;");
+        hboxNombreTabla.getChildren().addAll(lblNombreTabla, txtNombreTabla);
 
         Label lblColsTitle = new Label("Columnas:");
         lblColsTitle.setStyle("-fx-font-size: 11px; -fx-text-fill: #e2e8f0;");
 
         TextArea textColsInput = new TextArea();
-        textColsInput.setPrefRowCount(8);
+        textColsInput.setPrefRowCount(6);
         textColsInput.setWrapText(true);
         textColsInput.setText("id INT AUTO_INCREMENT PRIMARY KEY,\nnombre VARCHAR(100) NOT NULL,\nemail VARCHAR(100) UNIQUE");
-        textColsInput.setStyle("-fx-font-family: 'Courier New'; -fx-font-size: 10px; -fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0;");
-        VBox.setVgrow(textColsInput, Priority.ALWAYS);
+        aplicarEstiloDarkTextArea(textColsInput);
 
-        Button btnCrear = new Button("Crear Tabla");
-        btnCrear.setStyle("-fx-padding: 8px 16px;");
-        btnCrear.setOnAction(e -> {
-            String nombre = txtNombre.getText().trim();
+        Button btnCrearTabla = new Button("Crear Tabla");
+        btnCrearTabla.setStyle("-fx-padding: 8px 16px;");
+        btnCrearTabla.setOnAction(e -> {
+            String nombre = txtNombreTabla.getText().trim();
             if (nombre.isEmpty()) {
                 lblStatus.setText("ERROR: Ingresa nombre de tabla");
                 return;
@@ -317,14 +325,76 @@ public class MainController implements Initializable {
             lblStatus.setText(resultado);
 
             if (resultado.startsWith("Tabla creada")) {
-                txtNombre.clear();
+                txtNombreTabla.clear();
                 textColsInput.clear();
                 cargarArbolObjetos();
             }
         });
 
-        vbox.getChildren().addAll(lblTitulo, hboxNombre, lblColsTitle, textColsInput, btnCrear);
-        tabEditor.setContent(vbox);
+        VBox sectionTabla = new VBox(10);
+        sectionTabla.setStyle("-fx-border-color: #2a2d3a; -fx-border-width: 1; -fx-padding: 12; -fx-border-radius: 4;");
+        sectionTabla.getChildren().addAll(lblTituloTabla, hboxNombreTabla, lblColsTitle, textColsInput, btnCrearTabla);
+
+        // ========== SECCIÓN DE VISTAS ==========
+        Label lblTituloVista = new Label("Crear nueva vista:");
+        lblTituloVista.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0; -fx-padding: 12 0 0 0;");
+
+        HBox hboxNombreVista = new HBox(10);
+        Label lblNombreVista = new Label("Nombre: ");
+        lblNombreVista.setStyle("-fx-text-fill: #e2e8f0; -fx-min-width: 100;");
+        TextField txtNombreVista = new TextField();
+        txtNombreVista.setPromptText("vista_usuarios");
+        txtNombreVista.setStyle("-fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0;");
+        hboxNombreVista.getChildren().addAll(lblNombreVista, txtNombreVista);
+
+        Label lblSelectTitle = new Label("Consulta SELECT:");
+        lblSelectTitle.setStyle("-fx-font-size: 11px; -fx-text-fill: #e2e8f0;");
+
+        TextArea textSelectInput = new TextArea();
+        textSelectInput.setPrefRowCount(6);
+        textSelectInput.setWrapText(true);
+        textSelectInput.setText("SELECT id, nombre, email FROM usuarios WHERE estado = 1");
+        aplicarEstiloDarkTextArea(textSelectInput);
+
+        Button btnCrearVista = new Button("Crear Vista");
+        btnCrearVista.setStyle("-fx-padding: 8px 16px;");
+        btnCrearVista.setOnAction(e -> {
+            String nombre = txtNombreVista.getText().trim();
+            if (nombre.isEmpty()) {
+                lblStatus.setText("ERROR: Ingresa nombre de vista");
+                return;
+            }
+            String select = textSelectInput.getText().trim();
+            if (select.isEmpty()) {
+                lblStatus.setText("ERROR: Ingresa consulta SELECT");
+                return;
+            }
+
+            String resultado = metadata.crearVista(nombre, select);
+            lblStatus.setText(resultado);
+
+            if (resultado.startsWith("Vista creada")) {
+                txtNombreVista.clear();
+                textSelectInput.clear();
+                cargarArbolObjetos();
+            }
+        });
+
+        VBox sectionVista = new VBox(10);
+        sectionVista.setStyle("-fx-border-color: #2a2d3a; -fx-border-width: 1; -fx-padding: 12; -fx-border-radius: 4;");
+        sectionVista.getChildren().addAll(lblTituloVista, hboxNombreVista, lblSelectTitle, textSelectInput, btnCrearVista);
+
+        // ScrollPane para que quepa todo
+        ScrollPane scroll = new ScrollPane();
+        scroll.setStyle("-fx-background-color: #0f1117; -fx-border-color: transparent;");
+        scroll.setFitToWidth(true);
+
+        VBox contenidoScroll = new VBox(15);
+        contenidoScroll.setPadding(new Insets(0));
+        contenidoScroll.getChildren().addAll(sectionTabla, sectionVista);
+
+        scroll.setContent(contenidoScroll);
+        tabEditor.setContent(scroll);
         tabPane.getTabs().add(tabEditor);
     }
 
@@ -346,8 +416,8 @@ public class MainController implements Initializable {
         TextArea textSQL = new TextArea();
         textSQL.setPrefRowCount(6);
         textSQL.setWrapText(true);
-        textSQL.setStyle("-fx-font-family: 'Courier New'; -fx-font-size: 10px; -fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0;");
         textSQL.setText("SELECT * FROM ");
+        aplicarEstiloDarkTextArea(textSQL);
         VBox.setVgrow(textSQL, Priority.ALWAYS);
 
         Button btnEjecutar = new Button("Ejecutar");
@@ -421,6 +491,24 @@ public class MainController implements Initializable {
         tabla.setStyle("-fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0;");
 
         contenedor.getChildren().add(tabla);
+    }
+
+    // ================================================================
+    // HELPER: Aplicar estilo dark a TextArea
+    // ================================================================
+    private void aplicarEstiloDarkTextArea(TextArea textArea) {
+        textArea.setStyle(
+            "-fx-font-family: 'Courier New';" +
+            "-fx-font-size: 10px;" +
+            "-fx-background-color: #1a1d27;" +
+            "-fx-control-inner-background: #1a1d27;" +
+            "-fx-text-fill: #e2e8f0;" +
+            "-fx-highlight-fill: #4ade80;" +
+            "-fx-highlight-text-fill: #0f1117;" +
+            "-fx-border-color: #2a2d3a;" +
+            "-fx-border-radius: 4;" +
+            "-fx-padding: 8;"
+        );
     }
 
     // ================================================================

@@ -1,8 +1,0 @@
-app\MainApp.class
-controller\LoginController.class
-service\ConexionStorage$1.class
-service\MetadataExtractor.class
-model\ConexionGuardada.class
-service\ConexionStorage.class
-service\ConexionManager.class
-controller\MainController.class
