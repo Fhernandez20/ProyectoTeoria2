@@ -271,90 +271,185 @@ public class MainController implements Initializable {
         tabEditor.setText("Editor Visual");
         tabEditor.setClosable(false);
 
-        VBox vbox = new VBox(10);
-        vbox.setPadding(new Insets(16));
-        vbox.setStyle("-fx-background-color: #0f1117;");
+        ScrollPane scroll = new ScrollPane();
+        scroll.setStyle("-fx-background-color: #0f1117; -fx-border-color: transparent;");
+        scroll.setFitToWidth(true);
+
+        VBox mainVBox = new VBox(20);
+        mainVBox.setPadding(new Insets(20));
+        mainVBox.setStyle("-fx-background-color: #0f1117;");
 
         // ========== SECCIÓN DE TABLAS ==========
-        Label lblTituloTabla = new Label("Crear nueva tabla:");
-        lblTituloTabla.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;");
+        VBox sectionTabla = crearSeccionTabla();
+        
+        // ========== SECCIÓN DE VISTAS ==========
+        VBox sectionVista = crearSeccionVista();
 
-        HBox hboxNombreTabla = new HBox(10);
-        Label lblNombreTabla = new Label("Nombre: ");
-        lblNombreTabla.setStyle("-fx-text-fill: #e2e8f0; -fx-min-width: 100;");
-        TextField txtNombreTabla = new TextField();
-        txtNombreTabla.setPromptText("usuarios");
-        txtNombreTabla.setStyle("-fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0;");
-        hboxNombreTabla.getChildren().addAll(lblNombreTabla, txtNombreTabla);
+        mainVBox.getChildren().addAll(sectionTabla, sectionVista);
+        scroll.setContent(mainVBox);
+        tabEditor.setContent(scroll);
+        tabPane.getTabs().add(tabEditor);
+    }
 
-        Label lblColsTitle = new Label("Columnas:");
-        lblColsTitle.setStyle("-fx-font-size: 11px; -fx-text-fill: #e2e8f0;");
+    private VBox crearSeccionTabla() {
+        VBox section = new VBox(10);
+        section.setStyle(
+            "-fx-border-color: #4ade80; " +
+            "-fx-border-width: 2; " +
+            "-fx-padding: 15; " +
+            "-fx-border-radius: 6; " +
+            "-fx-background-color: #0d1b0f;"
+        );
 
-        TextArea textColsInput = new TextArea();
-        textColsInput.setPrefRowCount(6);
-        textColsInput.setWrapText(true);
-        textColsInput.setText("id INT AUTO_INCREMENT PRIMARY KEY,\nnombre VARCHAR(100) NOT NULL,\nemail VARCHAR(100) UNIQUE");
-        aplicarEstiloDarkTextArea(textColsInput);
+        // Título
+        Label lblTitulo = new Label("📋 Crear Nueva Tabla");
+        lblTitulo.setStyle(
+            "-fx-font-size: 14px; " +
+            "-fx-font-weight: bold; " +
+            "-fx-text-fill: #4ade80; " +
+            "-fx-letter-spacing: 1;"
+        );
 
-        Button btnCrearTabla = new Button("Crear Tabla");
-        btnCrearTabla.setStyle("-fx-padding: 8px 16px;");
-        btnCrearTabla.setOnAction(e -> {
-            String nombre = txtNombreTabla.getText().trim();
+        // Nombre
+        HBox hboxNombre = new HBox(10);
+        hboxNombre.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        Label lblNombre = new Label("Nombre tabla:");
+        lblNombre.setStyle("-fx-text-fill: #94a3b8; -fx-min-width: 120;");
+        TextField txtNombre = new TextField();
+        txtNombre.setPromptText("ej: usuarios");
+        txtNombre.setStyle("-fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0; -fx-padding: 8;");
+        txtNombre.setPrefWidth(300);
+        hboxNombre.getChildren().addAll(lblNombre, txtNombre);
+
+        // Columnas
+        Label lblCols = new Label("Definición de columnas:");
+        lblCols.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 11px;");
+
+        TextArea textCols = new TextArea();
+        textCols.setPrefRowCount(5);
+        textCols.setWrapText(true);
+        textCols.setText("id INT AUTO_INCREMENT PRIMARY KEY,\nnombre VARCHAR(100) NOT NULL,\nemail VARCHAR(100) UNIQUE");
+        textCols.setStyle(
+            "-fx-font-family: 'Courier New'; " +
+            "-fx-font-size: 11px; " +
+            "-fx-background-color: #1a1d27; " +
+            "-fx-text-fill: #4ade80; " +
+            "-fx-control-inner-background: #1a1d27; " +
+            "-fx-border-color: #4ade80; " +
+            "-fx-border-width: 1; " +
+            "-fx-padding: 8;"
+        );
+        VBox.setVgrow(textCols, Priority.SOMETIMES);
+
+        // Botón
+        Button btnCrear = new Button("✓ Crear Tabla");
+        btnCrear.setStyle(
+            "-fx-background-color: #4ade80; " +
+            "-fx-text-fill: #0f1117; " +
+            "-fx-font-weight: bold; " +
+            "-fx-font-size: 12px; " +
+            "-fx-padding: 10 20 10 20; " +
+            "-fx-cursor: hand;"
+        );
+        btnCrear.setOnAction(e -> {
+            String nombre = txtNombre.getText().trim();
             if (nombre.isEmpty()) {
-                lblStatus.setText("ERROR: Ingresa nombre de tabla");
+                lblStatus.setText("❌ ERROR: Ingresa el nombre de la tabla");
                 return;
             }
-            List<String> columnas = Arrays.stream(textColsInput.getText().split("\n"))
+            List<String> columnas = Arrays.stream(textCols.getText().split("\n"))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
+
+            if (columnas.isEmpty()) {
+                lblStatus.setText("❌ ERROR: Ingresa al menos una columna");
+                return;
+            }
 
             String resultado = metadata.crearTabla(nombre, columnas);
             lblStatus.setText(resultado);
 
             if (resultado.startsWith("Tabla creada")) {
-                txtNombreTabla.clear();
-                textColsInput.clear();
+                txtNombre.clear();
+                textCols.clear();
                 cargarArbolObjetos();
             }
         });
 
-        VBox sectionTabla = new VBox(10);
-        sectionTabla.setStyle("-fx-border-color: #2a2d3a; -fx-border-width: 1; -fx-padding: 12; -fx-border-radius: 4;");
-        sectionTabla.getChildren().addAll(lblTituloTabla, hboxNombreTabla, lblColsTitle, textColsInput, btnCrearTabla);
+        section.getChildren().addAll(lblTitulo, hboxNombre, lblCols, textCols, btnCrear);
+        return section;
+    }
 
-        // ========== SECCIÓN DE VISTAS ==========
-        Label lblTituloVista = new Label("Crear nueva vista:");
-        lblTituloVista.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0; -fx-padding: 12 0 0 0;");
+    private VBox crearSeccionVista() {
+        VBox section = new VBox(10);
+        section.setStyle(
+            "-fx-border-color: #22d3ee; " +
+            "-fx-border-width: 2; " +
+            "-fx-padding: 15; " +
+            "-fx-border-radius: 6; " +
+            "-fx-background-color: #0a1929;"
+        );
 
-        HBox hboxNombreVista = new HBox(10);
-        Label lblNombreVista = new Label("Nombre: ");
-        lblNombreVista.setStyle("-fx-text-fill: #e2e8f0; -fx-min-width: 100;");
-        TextField txtNombreVista = new TextField();
-        txtNombreVista.setPromptText("vista_usuarios");
-        txtNombreVista.setStyle("-fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0;");
-        hboxNombreVista.getChildren().addAll(lblNombreVista, txtNombreVista);
+        // Título
+        Label lblTitulo = new Label("👁️ Crear Nueva Vista");
+        lblTitulo.setStyle(
+            "-fx-font-size: 14px; " +
+            "-fx-font-weight: bold; " +
+            "-fx-text-fill: #22d3ee; " +
+            "-fx-letter-spacing: 1;"
+        );
 
-        Label lblSelectTitle = new Label("Consulta SELECT:");
-        lblSelectTitle.setStyle("-fx-font-size: 11px; -fx-text-fill: #e2e8f0;");
+        // Nombre
+        HBox hboxNombre = new HBox(10);
+        hboxNombre.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        Label lblNombre = new Label("Nombre vista:");
+        lblNombre.setStyle("-fx-text-fill: #94a3b8; -fx-min-width: 120;");
+        TextField txtNombre = new TextField();
+        txtNombre.setPromptText("ej: vista_usuarios");
+        txtNombre.setStyle("-fx-background-color: #1a1d27; -fx-text-fill: #e2e8f0; -fx-padding: 8;");
+        txtNombre.setPrefWidth(300);
+        hboxNombre.getChildren().addAll(lblNombre, txtNombre);
 
-        TextArea textSelectInput = new TextArea();
-        textSelectInput.setPrefRowCount(6);
-        textSelectInput.setWrapText(true);
-        textSelectInput.setText("SELECT id, nombre, email FROM usuarios WHERE estado = 1");
-        aplicarEstiloDarkTextArea(textSelectInput);
+        // SELECT
+        Label lblSelect = new Label("Consulta SELECT:");
+        lblSelect.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 11px;");
 
-        Button btnCrearVista = new Button("Crear Vista");
-        btnCrearVista.setStyle("-fx-padding: 8px 16px;");
-        btnCrearVista.setOnAction(e -> {
-            String nombre = txtNombreVista.getText().trim();
+        TextArea textSelect = new TextArea();
+        textSelect.setPrefRowCount(5);
+        textSelect.setWrapText(true);
+        textSelect.setText("SELECT id, nombre, email FROM usuarios WHERE estado = 1");
+        textSelect.setStyle(
+            "-fx-font-family: 'Courier New'; " +
+            "-fx-font-size: 11px; " +
+            "-fx-background-color: #1a1d27; " +
+            "-fx-text-fill: #22d3ee; " +
+            "-fx-control-inner-background: #1a1d27; " +
+            "-fx-border-color: #22d3ee; " +
+            "-fx-border-width: 1; " +
+            "-fx-padding: 8;"
+        );
+        VBox.setVgrow(textSelect, Priority.SOMETIMES);
+
+        // Botón
+        Button btnCrear = new Button("✓ Crear Vista");
+        btnCrear.setStyle(
+            "-fx-background-color: #22d3ee; " +
+            "-fx-text-fill: #0f1117; " +
+            "-fx-font-weight: bold; " +
+            "-fx-font-size: 12px; " +
+            "-fx-padding: 10 20 10 20; " +
+            "-fx-cursor: hand;"
+        );
+        btnCrear.setOnAction(e -> {
+            String nombre = txtNombre.getText().trim();
             if (nombre.isEmpty()) {
-                lblStatus.setText("ERROR: Ingresa nombre de vista");
+                lblStatus.setText("❌ ERROR: Ingresa el nombre de la vista");
                 return;
             }
-            String select = textSelectInput.getText().trim();
+            String select = textSelect.getText().trim();
             if (select.isEmpty()) {
-                lblStatus.setText("ERROR: Ingresa consulta SELECT");
+                lblStatus.setText("❌ ERROR: Ingresa la consulta SELECT");
                 return;
             }
 
@@ -362,28 +457,14 @@ public class MainController implements Initializable {
             lblStatus.setText(resultado);
 
             if (resultado.startsWith("Vista creada")) {
-                txtNombreVista.clear();
-                textSelectInput.clear();
+                txtNombre.clear();
+                textSelect.clear();
                 cargarArbolObjetos();
             }
         });
 
-        VBox sectionVista = new VBox(10);
-        sectionVista.setStyle("-fx-border-color: #2a2d3a; -fx-border-width: 1; -fx-padding: 12; -fx-border-radius: 4;");
-        sectionVista.getChildren().addAll(lblTituloVista, hboxNombreVista, lblSelectTitle, textSelectInput, btnCrearVista);
-
-        // ScrollPane para que quepa todo
-        ScrollPane scroll = new ScrollPane();
-        scroll.setStyle("-fx-background-color: #0f1117; -fx-border-color: transparent;");
-        scroll.setFitToWidth(true);
-
-        VBox contenidoScroll = new VBox(15);
-        contenidoScroll.setPadding(new Insets(0));
-        contenidoScroll.getChildren().addAll(sectionTabla, sectionVista);
-
-        scroll.setContent(contenidoScroll);
-        tabEditor.setContent(scroll);
-        tabPane.getTabs().add(tabEditor);
+        section.getChildren().addAll(lblTitulo, hboxNombre, lblSelect, textSelect, btnCrear);
+        return section;
     }
 
     // ================================================================
