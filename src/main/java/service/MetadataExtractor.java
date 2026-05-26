@@ -16,7 +16,10 @@ public class MetadataExtractor {
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SHOW CREATE TABLE " + nombreTabla)) {
             if (rs.next()) {
-                return rs.getString(2);
+                String ddl = rs.getString(2);
+                // Limpiar ENGINE, AUTO_INCREMENT, CHARSET, COLLATE para vista más limpia
+                ddl = ddl.replaceAll("\\)\\s+ENGINE=.*$", ")");
+                return ddl;
             }
         } catch (SQLException e) {
             return "-- Error: " + e.getMessage();

@@ -328,7 +328,7 @@ public class MainController implements Initializable {
         TextArea textCols = new TextArea();
         textCols.setPrefRowCount(5);
         textCols.setWrapText(true);
-        textCols.setText("id INT AUTO_INCREMENT PRIMARY KEY,\nnombre VARCHAR(100) NOT NULL,\nemail VARCHAR(100) UNIQUE");
+        textCols.setText("");
         textCols.setStyle(
             "-fx-font-family: 'Courier New'; " +
             "-fx-font-size: 11px; " +
@@ -355,6 +355,12 @@ public class MainController implements Initializable {
             String nombre = txtNombre.getText().trim();
             if (nombre.isEmpty()) {
                 lblStatus.setText("❌ ERROR: Ingresa el nombre de la tabla");
+                return;
+            }
+            
+            // Validar que la tabla no exista
+            if (metadata.listarTablas().contains(nombre)) {
+                lblStatus.setText("❌ ERROR: La tabla '" + nombre + "' ya existe");
                 return;
             }
             
@@ -425,7 +431,7 @@ public class MainController implements Initializable {
         TextArea textSelect = new TextArea();
         textSelect.setPrefRowCount(5);
         textSelect.setWrapText(true);
-        textSelect.setText("SELECT id, nombre, email FROM usuarios WHERE estado = 1");
+        textSelect.setText("");
         textSelect.setStyle(
             "-fx-font-family: 'Courier New'; " +
             "-fx-font-size: 11px; " +
@@ -454,6 +460,13 @@ public class MainController implements Initializable {
                 lblStatus.setText("❌ ERROR: Ingresa el nombre de la vista");
                 return;
             }
+            
+            // Validar que la vista no exista
+            if (metadata.listarVistas().contains(nombre)) {
+                lblStatus.setText("❌ ERROR: La vista '" + nombre + "' ya existe");
+                return;
+            }
+            
             String select = textSelect.getText().trim();
             if (select.isEmpty()) {
                 lblStatus.setText("❌ ERROR: Ingresa la consulta SELECT");
@@ -492,7 +505,7 @@ public class MainController implements Initializable {
         TextArea textSQL = new TextArea();
         textSQL.setPrefRowCount(6);
         textSQL.setWrapText(true);
-        textSQL.setText("SELECT * FROM ");
+        textSQL.setText("");
         aplicarEstiloDarkTextArea(textSQL);
         VBox.setVgrow(textSQL, Priority.ALWAYS);
 
